@@ -1,0 +1,37 @@
+name: Mass Deploy to Vercel
+on:
+  workflow_dispatch: # Позволяет запускать генерацию кнопкой
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+
+      - name: Run Mass Deploy
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          # Создаем пустой файл для ссылок
+          touch ready_links.txt
+          
+          # Цикл на 20 ссылок (можно менять число)
+          for i in {1..20}
+          do
+            # Генерим случайное имя проекта
+            PROJECT_NAME="x-invite-$(date +%s%N | cut -b10-16)"
+            echo "--- Деплой $i: $PROJECT_NAME ---"
+            
+            # Деплоим и записываем только URL в файл
+            vercel deploy --name $PROJECT_NAME --prod --yes --token $VERCEL_TOKEN >> ready_links.txt
+          done
+
+      - name: Upload Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: vercel-links
+          path: ready_links.txt
